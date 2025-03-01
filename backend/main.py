@@ -14,7 +14,7 @@ CORS(app, resources={
         "supports_credentials": True
     }
 })
-
+#test
 @app.route('/api/reverse', methods=['POST'])
 def reverse_text():
     data = request.json
