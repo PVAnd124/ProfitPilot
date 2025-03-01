@@ -1,61 +1,83 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import Dashboard from './components/Dashboard';
+import EmailMonitor from './components/EmailMonitor';
+import CalendarView from './components/CalendarView';
+import InvoiceManager from './components/InvoiceManager';
+import TemplateEditor from './components/TemplateEditor';
+import Settings from './components/Settings';
+import BookingSimulator from './components/BookingSimulator';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0);
-  const [inputText, setInputText] = useState("");
-  const [responseText, setResponseText] = useState("");
-
-  const handleSubmit = async () => {
-    try {
-      const response = await fetch("http://localhost:8080/api/reverse", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: inputText }),
-      });
-      const data = await response.json();
-      setResponseText(data.result);
-    } catch (error) {
-      console.error("Error:", error);
-      setResponseText("Error communicating with server");
-    }
-  };
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <Router>
+      <div className="app">
+        <aside className="sidebar">
+          <div className="sidebar-header">
+            <h1>AgenticAI</h1>
+          </div>
+          <nav className="sidebar-nav">
+            <ul>
+              <li>
+                <Link to="/">
+                  <i className="icon">📊</i>
+                  Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link to="/email-monitor">
+                  <i className="icon">📧</i>
+                  Email Monitor
+                </Link>
+              </li>
+              <li>
+                <Link to="/calendar">
+                  <i className="icon">📅</i>
+                  Calendar
+                </Link>
+              </li>
+              <li>
+                <Link to="/invoices">
+                  <i className="icon">💰</i>
+                  Invoices
+                </Link>
+              </li>
+              <li>
+                <Link to="/templates">
+                  <i className="icon">📝</i>
+                  Templates
+                </Link>
+              </li>
+              <li>
+                <Link to="/settings">
+                  <i className="icon">⚙️</i>
+                  Settings
+                </Link>
+              </li>
+              <li>
+                <Link to="/simulator">
+                  <i className="icon">🤖</i>
+                  Booking Simulator
+                </Link>
+              </li>
+            </ul>
+          </nav>
+        </aside>
+        
+        <main className="content">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/email-monitor" element={<EmailMonitor />} />
+            <Route path="/calendar" element={<CalendarView />} />
+            <Route path="/invoices" element={<InvoiceManager />} />
+            <Route path="/templates" element={<TemplateEditor />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/simulator" element={<BookingSimulator />} />
+          </Routes>
+        </main>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <input
-          type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="Enter text to reverse"
-        />
-        <button onClick={handleSubmit}>Reverse Text</button>
-        {responseText && <p>Server Response: {responseText}</p>}
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </Router>
   );
 }
 
