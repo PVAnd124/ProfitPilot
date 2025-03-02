@@ -3,4 +3,12 @@ flask-cors
 python-dotenv
 google-generativeai
 requests
+dotenv
+prophet
+numpy
+pandas
+sqlalchemy
+plotly
+matplotlib
+openai
 

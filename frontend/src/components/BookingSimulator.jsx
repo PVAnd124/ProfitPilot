@@ -6,6 +6,7 @@ const styles = {
   simulatorContainer: {
     maxWidth: '800px',
     margin: '0 auto',
+    color: '#333',
   },
   card: {
     background: 'white',
@@ -13,6 +14,7 @@ const styles = {
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
     marginBottom: '20px',
     overflow: 'hidden',
+    color: '#333',
   },
   cardHeader: {
     background: '#f5f5f5',
@@ -22,10 +24,12 @@ const styles = {
   cardTitle: {
     margin: 0,
     fontSize: '1.2rem',
+    color: '#222',
   },
   templateSelector: {
     padding: '15px 20px',
     borderBottom: '1px solid #eee',
+    color: '#333',
   },
   templateButtons: {
     display: 'flex',
@@ -35,6 +39,7 @@ const styles = {
   },
   formGroup: {
     padding: '20px',
+    color: '#333',
   },
   formControl: {
     width: '100%',
@@ -43,10 +48,14 @@ const styles = {
     borderRadius: '4px',
     fontFamily: 'inherit',
     fontSize: '14px',
+    color: '#333',
+    backgroundColor: '#fff',
   },
   emailContent: {
     minHeight: '200px',
     resize: 'vertical',
+    color: '#333',
+    backgroundColor: '#fff',
   },
   btn: {
     display: 'inline-flex',
@@ -58,6 +67,7 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px',
     transition: 'background-color 0.2s',
+    fontWeight: 'bold',
   },
   btnPrimary: {
     backgroundColor: '#4a6cf7',
@@ -66,7 +76,7 @@ const styles = {
   },
   btnSecondary: {
     backgroundColor: '#e9ecef',
-    color: '#495057',
+    color: '#333',
   },
   btnOutlinePrimary: {
     backgroundColor: 'transparent',
@@ -79,6 +89,7 @@ const styles = {
     gridTemplateColumns: 'repeat(2, 1fr)',
     gap: '15px',
     padding: '20px',
+    color: '#333',
   },
   detailItem: {
     display: 'flex',
@@ -87,11 +98,13 @@ const styles = {
   detailLabel: {
     fontWeight: 'bold',
     marginBottom: '5px',
-    color: '#666',
+    color: '#333',
   },
   responseCard: {
     marginTop: '20px',
     padding: '20px',
+    backgroundColor: '#ffffff',
+    color: '#333',
   },
   acceptance: {
     borderLeft: '5px solid #4caf50',
@@ -104,6 +117,7 @@ const styles = {
     padding: '15px',
     backgroundColor: '#f9f9f9',
     borderRadius: '4px',
+    color: '#333',
   },
   spinner: {
     animation: 'spin 1s linear infinite',
@@ -117,12 +131,29 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     margin: '10px 20px',
-    color: '#666',
+    color: '#333',
   },
   btnSuccess: {
     backgroundColor: '#28a745',
     color: 'white',
     margin: '10px 20px',
+  },
+  pageWrapper: {
+    backgroundColor: '#f7f7f7',
+    padding: '30px 20px',
+    minHeight: 'calc(100vh - 80px)',
+    color: '#333',
+  },
+  responseText: {
+    padding: '20px', 
+    whiteSpace: 'pre-wrap',
+    backgroundColor: '#fff',
+    color: '#333',
+    border: '1px solid #eee',
+    borderRadius: '4px',
+    fontFamily: 'monospace',
+    fontSize: '14px',
+    lineHeight: '1.6',
   },
 };
 
@@ -407,26 +438,26 @@ michael@financegroup.com`
       const today = new Date(bookingDetails.eventDate);
       
       // Generate alternatives for the same day, next day, and two days later
-      return [
-        {
-          eventDate: bookingDetails.eventDate,
+        return [
+          {
+            eventDate: bookingDetails.eventDate,
           startTime: "8:00 AM",
           endTime: "10:00 AM",
-          reason: "Earlier time slot on the same day"
-        },
-        {
+            reason: "Earlier time slot on the same day"
+          },
+          {
           eventDate: new Date(today.getTime() + 86400000).toISOString().split('T')[0],
-          startTime: bookingDetails.startTime,
-          endTime: bookingDetails.endTime,
-          reason: "Same time slot on the next day"
-        },
-        {
+            startTime: bookingDetails.startTime,
+            endTime: bookingDetails.endTime,
+            reason: "Same time slot on the next day"
+          },
+          {
           eventDate: new Date(today.getTime() + 172800000).toISOString().split('T')[0],
-          startTime: bookingDetails.startTime,
-          endTime: bookingDetails.endTime,
-          reason: "Same time slot two days later"
-        }
-      ];
+            startTime: bookingDetails.startTime,
+            endTime: bookingDetails.endTime,
+            reason: "Same time slot two days later"
+          }
+        ];
     } catch (error) {
       console.error("Error generating alternatives:", error);
       // Return default alternatives
@@ -538,42 +569,65 @@ michael@financegroup.com`
     );
   };
   
-  // Add this function to handle invoice generation
+  // Improved function to handle invoice generation with better debugging
   const handleGenerateInvoice = async () => {
-    if (!extractedDetails) return;
+    if (!extractedDetails) {
+      alert('No booking details available to generate an invoice.');
+      return;
+    }
     
     setIsGeneratingInvoice(true);
+    
     try {
+      // Format booking details to match the API expectation
+      const bookingDetails = {
+        client_name: extractedDetails.contactName,
+        client_email: extractedDetails.contactEmail,
+        requested_date: extractedDetails.eventDate,
+        start_time: extractedDetails.startTime,
+        end_time: extractedDetails.endTime,
+        purpose: extractedDetails.eventType,
+        attendees: parseInt(extractedDetails.numAttendees),
+        special_requests: extractedDetails.specialRequests,
+        organization: extractedDetails.organization
+      };
+      
+      console.log('Sending booking details for invoice generation:', bookingDetails);
+      
       const response = await fetch('http://localhost:8080/api/generate-invoice', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          booking_details: extractedDetails
+          booking_details: bookingDetails
         }),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to generate invoice');
+        const errorText = await response.text();
+        console.error('Server error:', errorText);
+        throw new Error(`Server responded with ${response.status}: ${errorText}`);
       }
       
       const data = await response.json();
+      console.log('Invoice generation response:', data);
+      
       setGeneratedInvoice(data.invoice);
       
       // Update the UI to show success
       alert('Invoice generated successfully! View it in the Invoice Manager.');
     } catch (error) {
       console.error('Error generating invoice:', error);
-      alert('Failed to generate invoice. Please try again.');
+      alert(`Failed to generate invoice: ${error.message}. Check console for details.`);
     } finally {
       setIsGeneratingInvoice(false);
     }
   };
   
   return (
-    <div>
-      <h1>Booking Simulator</h1>
+    <div style={styles.pageWrapper}>
+      <h1 style={{color: '#222', marginBottom: '30px'}}>Booking Simulator</h1>
       
       <div style={styles.simulatorContainer}>
         <div style={styles.card}>
@@ -693,7 +747,7 @@ michael@financegroup.com`
               </h2>
             </div>
             
-            <div style={{ padding: '20px', whiteSpace: 'pre-wrap' }}>
+            <div style={styles.responseText}>
               {response.message}
             </div>
             

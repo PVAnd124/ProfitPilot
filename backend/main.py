@@ -117,25 +117,39 @@ def generate_invoice():
     }
     """
     data = request.json
+    logger.info(f"Received invoice generation request: {data}")
+    
     booking_details = data.get('booking_details', {})
     pricing_info = data.get('pricing_info', None)
     
     if not booking_details:
+        logger.warning("Invoice generation failed: No booking details provided")
         return jsonify({'error': 'Booking details are required'}), 400
     
+    # Validate booking details has required fields
+    required_fields = ['client_name', 'requested_date']
+    missing_fields = [field for field in required_fields if not booking_details.get(field)]
+    
+    if missing_fields:
+        error_msg = f"Missing required fields in booking details: {', '.join(missing_fields)}"
+        logger.warning(f"Invoice generation failed: {error_msg}")
+        return jsonify({'error': error_msg}), 400
+    
     try:
+        logger.info(f"Generating invoice for booking: {booking_details}")
         invoice = gemini_processor.generate_invoice(booking_details, pricing_info)
         
         # Store the invoice for retrieval later
         invoice_id = invoice.get('invoice_data', {}).get('invoice_number', str(uuid.uuid4()))
         invoices_db[invoice_id] = invoice
         
+        logger.info(f"Invoice generated successfully with ID: {invoice_id}")
         return jsonify({
             'invoice_id': invoice_id,
             'invoice': invoice
         })
     except Exception as e:
-        logger.error(f"Error generating invoice: {str(e)}")
+        logger.error(f"Error generating invoice: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/invoices', methods=['GET'])

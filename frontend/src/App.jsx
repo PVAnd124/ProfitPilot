@@ -13,7 +13,6 @@ import ActivityLog from './components/ActivityLog';
 import BookingSimulator from './components/BookingSimulator';
 import InvoiceManager from './components/InvoiceManager';
 import EmailMonitor from './components/EmailMonitor';
-import Dashboard from './components/Dashboard';
 
 function App() {
   const [navbarOpen, setNavbarOpen] = useState(true);
@@ -48,54 +47,170 @@ function App() {
         <InteractiveBackground />
         
         {/* Navigation toggle button */}
-        <button className="nav-toggle" onClick={toggleNavbar}>
+        <button 
+          className="nav-toggle" 
+          onClick={toggleNavbar}
+          style={{
+            backgroundColor: '#0f3b64',
+            color: 'white',
+            border: 'none',
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
+            transition: 'all 0.3s',
+            position: 'fixed',
+            top: '20px',
+            left: '20px',
+            zIndex: 200
+          }}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#d03027'}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#0f3b64'}
+        >
           {navbarOpen ? <FaTimes /> : <FaBars />}
         </button>
 
         {/* Sidebar Navigation */}
         <nav className={`sidebar ${navbarOpen ? 'open' : 'closed'}`}>
           <div className="logo-container">
-            <h1>Profit Pilot</h1>
+            <h1 style={{ color: 'white', textShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}>Profit Pilot</h1>
           </div>
           <ul className="nav-links">
             <li>
-              <Link to="/dashboard" onClick={() => setNavbarOpen(false)}>
-                <FaChartLine /> Dashboard
+              <Link 
+                to="/weekly-digest" 
+                onClick={() => setNavbarOpen(false)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  padding: '15px 20px', 
+                  color: 'white', 
+                  textDecoration: 'none', 
+                  transition: 'all 0.3s',
+                  borderLeft: '4px solid transparent',
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+                }}
+                activeClassName="active"
+              >
+                <FaChartLine style={{ marginRight: '15px', color: 'white' }} /> Weekly Financial Digest
               </Link>
             </li>
             <li>
-              <Link to="/weekly-digest" onClick={() => setNavbarOpen(false)}>
-                <FaChartLine /> Weekly Financial Digest
+              <Link 
+                to="/event-scheduler" 
+                onClick={() => setNavbarOpen(false)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  padding: '15px 20px', 
+                  color: 'white', 
+                  textDecoration: 'none', 
+                  transition: 'all 0.3s',
+                  borderLeft: '4px solid transparent',
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+                }}
+                activeClassName="active"
+              >
+                <FaCalendarAlt style={{ marginRight: '15px', color: 'white' }} /> Event Scheduler
               </Link>
             </li>
             <li>
-              <Link to="/event-scheduler" onClick={() => setNavbarOpen(false)}>
-                <FaCalendarAlt /> Event Scheduler
+              <Link 
+                to="/financial-records" 
+                onClick={() => setNavbarOpen(false)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  padding: '15px 20px', 
+                  color: 'white', 
+                  textDecoration: 'none', 
+                  transition: 'all 0.3s',
+                  borderLeft: '4px solid transparent',
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+                }}
+                activeClassName="active"
+              >
+                <FaFileInvoiceDollar style={{ marginRight: '15px', color: 'white' }} /> Complete Financial Records
               </Link>
             </li>
             <li>
-              <Link to="/financial-records" onClick={() => setNavbarOpen(false)}>
-                <FaFileInvoiceDollar /> Complete Financial Records
+              <Link 
+                to="/email-monitor" 
+                onClick={() => setNavbarOpen(false)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  padding: '15px 20px', 
+                  color: 'white', 
+                  textDecoration: 'none', 
+                  transition: 'all 0.3s',
+                  borderLeft: '4px solid transparent',
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+                }}
+                activeClassName="active"
+              >
+                <FaEnvelope style={{ marginRight: '15px', color: 'white' }} /> Email Monitor
               </Link>
             </li>
             <li>
-              <Link to="/email-monitor" onClick={() => setNavbarOpen(false)}>
-                <FaEnvelope /> Email Monitor
+              <Link 
+                to="/booking-simulator" 
+                onClick={() => setNavbarOpen(false)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  padding: '15px 20px', 
+                  color: 'white', 
+                  textDecoration: 'none', 
+                  transition: 'all 0.3s',
+                  borderLeft: '4px solid transparent',
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+                }}
+                activeClassName="active"
+              >
+                <FaBookmark style={{ marginRight: '15px', color: 'white' }} /> Booking Simulator
               </Link>
             </li>
             <li>
-              <Link to="/booking-simulator" onClick={() => setNavbarOpen(false)}>
-                <FaBookmark /> Booking Simulator
+              <Link 
+                to="/invoice-manager" 
+                onClick={() => setNavbarOpen(false)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  padding: '15px 20px', 
+                  color: 'white', 
+                  textDecoration: 'none', 
+                  transition: 'all 0.3s',
+                  borderLeft: '4px solid transparent',
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+                }}
+                activeClassName="active"
+              >
+                <FaFileInvoiceDollar style={{ marginRight: '15px', color: 'white' }} /> Invoice Manager
               </Link>
             </li>
             <li>
-              <Link to="/invoice-manager" onClick={() => setNavbarOpen(false)}>
-                <FaFileInvoiceDollar /> Invoice Manager
-              </Link>
-            </li>
-            <li>
-              <Link to="/data-query" onClick={() => setNavbarOpen(false)}>
-                <FaDatabase /> Data Query
+              <Link 
+                to="/data-query" 
+                onClick={() => setNavbarOpen(false)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  padding: '15px 20px', 
+                  color: 'white', 
+                  textDecoration: 'none', 
+                  transition: 'all 0.3s',
+                  borderLeft: '4px solid transparent',
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+                }}
+                activeClassName="active"
+              >
+                <FaDatabase style={{ marginRight: '15px', color: 'white' }} /> Data Query
               </Link>
             </li>
           </ul>
@@ -104,8 +219,7 @@ function App() {
         {/* Main Content Area */}
         <main className={`main-content ${navbarOpen ? 'with-sidebar' : 'full-width'}`}>
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/" element={<Navigate to="/weekly-digest" replace />} />
             <Route path="/weekly-digest" element={<WeeklyFinancialDigest />} />
             <Route path="/event-scheduler" element={<EventScheduler />} />
             <Route path="/financial-records" element={<FinancialRecords />} />

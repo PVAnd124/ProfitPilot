@@ -188,37 +188,7 @@ const FinancialRecords = () => {
             </div>
             
             <div className="chart-section">
-              <Card title="Monthly Financial Performance">
-                <div className="chart-container">
-                  <div className="chart-placeholder">
-                    <div className="monthly-chart-simulation">
-                      {monthlyData.profit.map((value, index) => (
-                        <div 
-                          key={index} 
-                          className="chart-bar-container"
-                          style={{ height: `${(value / Math.max(...monthlyData.profit)) * 100}%` }}
-                        >
-                          <div className="chart-bar"></div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="chart-legend">
-                    <div className="legend-item">
-                      <span className="legend-color revenue"></span>
-                      <span>Revenue</span>
-                    </div>
-                    <div className="legend-item">
-                      <span className="legend-color expense"></span>
-                      <span>Expenses</span>
-                    </div>
-                    <div className="legend-item">
-                      <span className="legend-color profit"></span>
-                      <span>Profit</span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
+              {/* Monthly Financial Performance card removed */}
             </div>
             
             <Card title="Recent Transactions">
