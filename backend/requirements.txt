@@ -1,4 +1,6 @@
 flask
 flask-cors
 dotenv
-
+google-generativeai
+langgraph
+python-dateutil
