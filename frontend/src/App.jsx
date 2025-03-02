@@ -1,61 +1,67 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { FaChartLine, FaCalendarAlt, FaFileInvoiceDollar, FaBars, FaTimes } from 'react-icons/fa';
+import './App.css';
+
+// Components
+import InteractiveBackground from './components/InteractiveBackground';
+import WeeklyFinancialDigest from './components/WeeklyFinancialDigest';
+import EventScheduler from './components/EventScheduler';
+import FinancialRecords from './components/FinancialRecords';
 
 function App() {
-  const [count, setCount] = useState(0);
-  const [inputText, setInputText] = useState("");
-  const [responseText, setResponseText] = useState("");
+  const [navbarOpen, setNavbarOpen] = useState(true);
 
-  const handleSubmit = async () => {
-    try {
-      const response = await fetch("http://localhost:8080/api/reverse", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: inputText }),
-      });
-      const data = await response.json();
-      setResponseText(data.result);
-    } catch (error) {
-      console.error("Error:", error);
-      setResponseText("Error communicating with server");
-    }
+  const toggleNavbar = () => {
+    setNavbarOpen(!navbarOpen);
   };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+    <Router>
+      <div className="app-container">
+        {/* Interactive Background */}
+        <InteractiveBackground />
+        
+        {/* Navigation toggle button */}
+        <button className="nav-toggle" onClick={toggleNavbar}>
+          {navbarOpen ? <FaTimes /> : <FaBars />}
         </button>
-        <input
-          type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="Enter text to reverse"
-        />
-        <button onClick={handleSubmit}>Reverse Text</button>
-        {responseText && <p>Server Response: {responseText}</p>}
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+
+        {/* Sidebar Navigation */}
+        <nav className={`sidebar ${navbarOpen ? 'open' : 'closed'}`}>
+          <div className="logo-container">
+            <h1>Profit Pilot</h1>
+          </div>
+          <ul className="nav-links">
+            <li>
+              <Link to="/weekly-digest" onClick={() => setNavbarOpen(false)}>
+                <FaChartLine /> Weekly Financial Digest
+              </Link>
+            </li>
+            <li>
+              <Link to="/event-scheduler" onClick={() => setNavbarOpen(false)}>
+                <FaCalendarAlt /> Event Scheduler
+              </Link>
+            </li>
+            <li>
+              <Link to="/financial-records" onClick={() => setNavbarOpen(false)}>
+                <FaFileInvoiceDollar /> Complete Financial Records
+              </Link>
+            </li>
+          </ul>
+        </nav>
+
+        {/* Main Content Area */}
+        <main className={`main-content ${navbarOpen ? 'with-sidebar' : 'full-width'}`}>
+          <Routes>
+            <Route path="/" element={<Navigate to="/weekly-digest" replace />} />
+            <Route path="/weekly-digest" element={<WeeklyFinancialDigest />} />
+            <Route path="/event-scheduler" element={<EventScheduler />} />
+            <Route path="/financial-records" element={<FinancialRecords />} />
+          </Routes>
+        </main>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </Router>
   );
 }
 
