@@ -5,12 +5,13 @@ import matplotlib.pyplot as plt
 from prophet import Prophet
 from sqlalchemy import create_engine
 from sqlalchemy.types import DateTime, Integer, Float
-from flask import Flask, jsonify, request, send_file
+from flask import jsonify, request, send_file
+
 
 # ------------------------------
 # SETUP: In-Memory SQLite Database
 # ------------------------------
-engine = create_engine('sqlite:///:memory:', echo=False)
+engine = create_engine('sqlite:///profit_pilot.db', echo=False)
 # engine = create_engine('sqlite:///my_database.db', echo=False)
 
 
@@ -99,7 +100,9 @@ def run_etl_and_forecast():
         # Use a moderate seasonality_prior_scale
         seasonality_prior_scale=10.0,
         # Use additive seasonality by default
-        seasonality_mode='additive'
+        seasonality_mode='additive',
+        # Add this parameter:
+        n_changepoints=25,  # Reduce number of changepoints
     )
     
     # Add custom seasonality if we have enough data
@@ -129,9 +132,7 @@ latest_forecast = None
 # ------------------------------
 # Flask API to Serve the Forecast, Plot & Accept New Transactions
 # ------------------------------
-app = Flask(__name__)
 
-@app.route('/forecast', methods=['GET'])
 def get_forecast():
     """
     Returns the current forecast as JSON.
@@ -140,11 +141,9 @@ def get_forecast():
     global latest_forecast
     if latest_forecast is None:
         latest_forecast = run_etl_and_forecast()
-    # Select relevant columns and return as JSON
     result = latest_forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].to_dict(orient='records')
     return jsonify(result)
 
-@app.route('/forecast_plot', methods=['GET'])
 def get_forecast_plot():
     """
     Creates an aesthetic plot of the forecast and sends it as a PNG image.
@@ -152,17 +151,15 @@ def get_forecast_plot():
     global latest_forecast
     if latest_forecast is None:
         latest_forecast = run_etl_and_forecast()
-
-    # Get the current date and filter the historical data to the last 365 days for plotting
-    today = pd.Timestamp('today')
+    # Get the current date and filter the historical data to the last 365 days for plotting   # today = pd.Timestamp('today') <-- for production
+    today = pd.Timestamp('2023-12-31')
     one_year_ago = today - pd.Timedelta(days=365)
-    
+    # Create an aesthetic plot using matplotlib
+    fig, ax = plt.subplots(figsize=(12, 6))
+
     # Plot historical data with a line to show trend
     historical_data = latest_forecast[~latest_forecast['historical'].isna()]
     historical_data = historical_data[historical_data['ds'] >= one_year_ago]
-
-    # Create an aesthetic plot using matplotlib
-    fig, ax = plt.subplots(figsize=(12, 6))
 
     # Plot historical data
     historical_data['smoothed'] = historical_data['historical'].rolling(window=7, min_periods=1).mean()
@@ -190,7 +187,7 @@ def get_forecast_plot():
     )
 
     # Add a vertical line to separate historical and forecast
-    ax.axvline(x=forecast_start, color='gray', linestyle='--', alpha=0.5, label='Forecast Start')
+    ax.axvline(x=forecast_start.to_datetime64(), color='gray', linestyle='--', alpha=0.5, label='Forecast Start')
 
     ax.set_xlabel('Date')
     ax.set_ylabel('Number of Purchases per Day')
@@ -206,7 +203,7 @@ def get_forecast_plot():
     buf.seek(0)
     return send_file(buf, mimetype='image/png')
 
-@app.route('/new_transaction', methods=['POST'])
+# @app.route('/new_transaction', methods=['POST'])
 def new_transaction():
     """
     Adds a new purchase transaction. Expects a JSON payload with 'purchaseId', 'timestamp', and 'cost'.
@@ -236,7 +233,8 @@ def display_plot_temporarily():
     forecast = run_etl_and_forecast()
 
     # Get the current date and filter the historical data to the last 365 days for plotting
-    today = pd.Timestamp('today')
+    # today = pd.Timestamp('today') <-- for production
+    today = pd.Timestamp('2023-12-31')
     one_year_ago = today - pd.Timedelta(days=365)
     
     # Create plot
@@ -247,10 +245,16 @@ def display_plot_temporarily():
     historical_data = historical_data[historical_data['ds'] >= one_year_ago]
 
     # Filter based on the last year
-    ax.scatter(historical_data['ds'], historical_data['historical'], 
-              color='blue', alpha=0.5, s=20, label='Historical Data')
-    ax.plot(historical_data['ds'], historical_data['historical'], 
-            color='blue', alpha=0.3, linestyle='-', linewidth=1)
+    # ax.scatter(historical_data['ds'], historical_data['historical'], 
+    #           color='blue', alpha=0.5, s=20, label='Historical Data')
+    # ax.plot(historical_data['ds'], historical_data['historical'], 
+    #         color='blue', alpha=0.3, linestyle='-', linewidth=1)
+
+    # Plot historical data
+    historical_data['smoothed'] = historical_data['historical'].rolling(window=7, min_periods=1).mean()
+    ax.plot(historical_data['ds'], historical_data['smoothed'], 
+            color='blue', alpha=0.6, linestyle='-', linewidth=2, 
+            label='Smoothed Historical Data')
     
     print("sanity check 2")
     
@@ -290,12 +294,4 @@ def display_plot_temporarily():
     plt.tight_layout()
     plt.show()
 
-
-# ------------------------------
-# Main Execution
-# ------------------------------
-if __name__ == '__main__':
-    generate_sample_data()
-    # Uncomment the next line to temporarily display the plot on the backend for testing.
-    display_plot_temporarily()
-    app.run(debug=True)
+# My forecasting works in forecast.py now. How do i embed the plot in the interface coded by WeeklyFinancialDigest.jsx? When the user toggles to the weeklyfinancialdigest page, I want the forecast.py to generate the forecast plot and send it to the weekly financial digest page, and then the weekly financial digest page should display it nicely. 
