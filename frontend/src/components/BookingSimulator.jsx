@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaPaperPlane, FaCheck, FaTimes, FaSpinner } from 'react-icons/fa';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { FaPaperPlane, FaCheck, FaTimes, FaSpinner, FaFileInvoiceDollar } from 'react-icons/fa';
 
 // CSS styles directly in the component for now
 const styles = {
@@ -120,6 +119,11 @@ const styles = {
     margin: '10px 20px',
     color: '#666',
   },
+  btnSuccess: {
+    backgroundColor: '#28a745',
+    color: 'white',
+    margin: '10px 20px',
+  },
 };
 
 const BookingSimulator = () => {
@@ -131,6 +135,8 @@ const BookingSimulator = () => {
   const [availabilityResult, setAvailabilityResult] = useState(null);
   const [response, setResponse] = useState(null);
   const [selectedAlternative, setSelectedAlternative] = useState(null);
+  const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false);
+  const [generatedInvoice, setGeneratedInvoice] = useState(null);
   
   // Templates for booking requests
   const templates = [
@@ -230,7 +236,7 @@ michael@financegroup.com`
     setSelectedAlternative(null);
     
     try {
-      // Step 1: Extract booking details using Gemini API
+      // Step 1: Extract booking details using the backend API
       const details = await extractBookingDetails(emailContent);
       setExtractedDetails(details);
       
@@ -239,7 +245,7 @@ michael@financegroup.com`
       const availability = await checkAvailability(details, existingEvents);
       setAvailabilityResult(availability);
       
-      // Step 3: Generate response
+      // Step 3: Generate response using the backend
       setProcessingStep('generating');
       const responseText = await generateResponse(details, availability);
       setResponse({
@@ -290,60 +296,50 @@ michael@financegroup.com`
     }
   };
   
-  // Function to extract booking details using Gemini API
+  // Function to extract booking details using the backend API
   const extractBookingDetails = async (emailContent) => {
     try {
-      // Initialize the Gemini API
-      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const response = await fetch('http://localhost:8080/api/analyze-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email_body: emailContent }),
+      });
       
-      // Create the prompt
-      const prompt = `
-        Extract the following booking details from this email:
-        - Event type (e.g., meeting, conference, workshop)
-        - Event date
-        - Start time
-        - End time
-        - Number of attendees
-        - Contact name
-        - Contact email
-        - Organization name (if mentioned)
-        - Special requests (if any)
-
-        Format the response as a JSON object with these fields:
-        {
-          "eventType": "...",
-          "eventDate": "YYYY-MM-DD",
-          "startTime": "...",
-          "endTime": "...",
-          "numAttendees": number,
-          "contactName": "...",
-          "contactEmail": "...",
-          "organization": "..." (or null if not mentioned),
-          "specialRequests": "..." (or null if not mentioned)
-        }
-
-        Email content:
-        ${emailContent}
-      `;
-      
-      // Generate content
-      const result = await model.generateContent(prompt);
-      const responseText = result.response.text();
-      
-      // Extract the JSON part
-      const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/) || 
-                        responseText.match(/{[\s\S]*?}/);
-      
-      if (jsonMatch) {
-        const jsonStr = jsonMatch[1] || jsonMatch[0];
-        return JSON.parse(jsonStr);
-      } else {
-        throw new Error("Could not parse the response from AI");
+      if (!response.ok) {
+        throw new Error('Failed to analyze email content');
       }
+      
+      const data = await response.json();
+      
+      // Transform booking_details from backend to match our frontend format
+      const bookingDetails = data.booking_details;
+      return {
+        eventType: bookingDetails.purpose || 'Event',
+        eventDate: bookingDetails.requested_date || '2023-11-25',
+        startTime: bookingDetails.start_time || '9:00 AM',
+        endTime: bookingDetails.end_time || '5:00 PM',
+        numAttendees: bookingDetails.attendees || 10,
+        contactName: bookingDetails.client_name || 'Client',
+        contactEmail: bookingDetails.client_email || 'client@example.com',
+        organization: bookingDetails.organization || null,
+        specialRequests: bookingDetails.special_requests || null
+      };
     } catch (error) {
       console.error("Error extracting booking details:", error);
-      throw error;
+      // Return default values if the API fails
+      return {
+        eventType: 'Event',
+        eventDate: '2023-11-25',
+        startTime: '9:00 AM',
+        endTime: '5:00 PM',
+        numAttendees: 10,
+        contactName: 'Client',
+        contactEmail: 'client@example.com',
+        organization: null,
+        specialRequests: null
+      };
     }
   };
   
@@ -377,7 +373,7 @@ michael@financegroup.com`
       return { available: true };
     }
     
-    // If there are conflicts, generate alternatives using Gemini
+    // If there are conflicts, generate alternatives using the backend
     const alternatives = await generateAlternatives(bookingDetails, existingEvents);
     
     return {
@@ -406,76 +402,34 @@ michael@financegroup.com`
   // Function to generate alternative time slots
   const generateAlternatives = async (bookingDetails, existingEvents) => {
     try {
-      // Initialize the Gemini API
-      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      // Since we don't have a dedicated backend endpoint for alternatives yet,
+      // we'll generate them on the frontend for now
+      const today = new Date(bookingDetails.eventDate);
       
-      // Create the prompt
-      const prompt = `
-        I need to suggest alternative time slots for a booking that has conflicts.
-        
-        Original booking details:
-        - Date: ${bookingDetails.eventDate}
-        - Time: ${bookingDetails.startTime} to ${bookingDetails.endTime}
-        - Event type: ${bookingDetails.eventType}
-        - Number of attendees: ${bookingDetails.numAttendees}
-        
-        Existing events on the calendar:
-        ${existingEvents.map(event => 
-          `- ${new Date(event.start).toLocaleDateString()}: ${new Date(event.start).toLocaleTimeString()} to ${new Date(event.end).toLocaleTimeString()} - ${event.title}`
-        ).join('\n')}
-        
-        Please suggest 3 alternative time slots that avoid conflicts. Consider suggesting slots on the same day at different times, or on nearby dates.
-        
-        Format the response as a JSON array with objects containing:
-        [
-          {
-            "eventDate": "YYYY-MM-DD",
-            "startTime": "...",
-            "endTime": "...",
-            "reason": "Brief explanation of why this alternative was suggested"
-          },
-          ...
-        ]
-      `;
-      
-      // Generate content
-      const result = await model.generateContent(prompt);
-      const responseText = result.response.text();
-      
-      // Extract the JSON part
-      const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/) || 
-                        responseText.match(/\[([\s\S]*?)\]/);
-      
-      if (jsonMatch) {
-        const jsonStr = jsonMatch[1] || jsonMatch[0];
-        return JSON.parse(jsonStr);
-      } else {
-        // If we can't parse the JSON, return some default alternatives
-        return [
-          {
-            eventDate: bookingDetails.eventDate,
-            startTime: "9:00 AM",
-            endTime: "12:00 PM",
-            reason: "Earlier time slot on the same day"
-          },
-          {
-            eventDate: new Date(new Date(bookingDetails.eventDate).getTime() + 86400000).toISOString().split('T')[0],
-            startTime: bookingDetails.startTime,
-            endTime: bookingDetails.endTime,
-            reason: "Same time slot on the next day"
-          },
-          {
-            eventDate: new Date(new Date(bookingDetails.eventDate).getTime() + 172800000).toISOString().split('T')[0],
-            startTime: bookingDetails.startTime,
-            endTime: bookingDetails.endTime,
-            reason: "Same time slot two days later"
-          }
-        ];
-      }
+      // Generate alternatives for the same day, next day, and two days later
+      return [
+        {
+          eventDate: bookingDetails.eventDate,
+          startTime: "8:00 AM",
+          endTime: "10:00 AM",
+          reason: "Earlier time slot on the same day"
+        },
+        {
+          eventDate: new Date(today.getTime() + 86400000).toISOString().split('T')[0],
+          startTime: bookingDetails.startTime,
+          endTime: bookingDetails.endTime,
+          reason: "Same time slot on the next day"
+        },
+        {
+          eventDate: new Date(today.getTime() + 172800000).toISOString().split('T')[0],
+          startTime: bookingDetails.startTime,
+          endTime: bookingDetails.endTime,
+          reason: "Same time slot two days later"
+        }
+      ];
     } catch (error) {
       console.error("Error generating alternatives:", error);
-      // Return some default alternatives
+      // Return default alternatives
       return [
         {
           eventDate: bookingDetails.eventDate,
@@ -499,68 +453,60 @@ michael@financegroup.com`
     }
   };
   
-  // Function to generate response
+  // Function to generate response using the backend
   const generateResponse = async (bookingDetails, availabilityResult) => {
     try {
-      // Initialize the Gemini API
-      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      // Transform data to match backend API format
+      const backendBookingDetails = {
+        client_name: bookingDetails.contactName,
+        client_email: bookingDetails.contactEmail,
+        requested_date: bookingDetails.eventDate,
+        start_time: bookingDetails.startTime,
+        end_time: bookingDetails.endTime,
+        purpose: bookingDetails.eventType,
+        attendees: bookingDetails.numAttendees,
+        special_requests: bookingDetails.specialRequests,
+        organization: bookingDetails.organization
+      };
       
-      let prompt;
+      let response;
       
       if (availabilityResult.available) {
-        // Generate acceptance response
-        prompt = `
-          Generate a professional email response accepting a booking request with the following details:
-          
-          - Event type: ${bookingDetails.eventType}
-          - Date: ${bookingDetails.eventDate}
-          - Time: ${bookingDetails.startTime} to ${bookingDetails.endTime}
-          - Number of attendees: ${bookingDetails.numAttendees}
-          - Contact name: ${bookingDetails.contactName}
-          - Organization: ${bookingDetails.organization || 'Not specified'}
-          
-          The response should:
-          1. Confirm the booking details
-          2. Mention that an invoice will be generated and sent separately
-          3. Include information about any special requests: ${bookingDetails.specialRequests || 'None'}
-          4. Provide contact information for any questions
-          5. Be professional and courteous
-          
-          Format the response as a plain text email.
-        `;
+        // Generate acceptance response using backend
+        response = await fetch('http://localhost:8080/api/generate-confirmation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ booking_details: backendBookingDetails }),
+        });
       } else {
-        // Generate rejection with alternatives
-        prompt = `
-          Generate a professional email response rejecting a booking request due to scheduling conflicts, but offering alternatives.
-          
-          Original booking details:
-          - Event type: ${bookingDetails.eventType}
-          - Date: ${bookingDetails.eventDate}
-          - Time: ${bookingDetails.startTime} to ${bookingDetails.endTime}
-          - Number of attendees: ${bookingDetails.numAttendees}
-          - Contact name: ${bookingDetails.contactName}
-          - Organization: ${bookingDetails.organization || 'Not specified'}
-          
-          Alternative slots available:
-          ${availabilityResult.alternatives.map((alt, index) => 
-            `${index + 1}. ${alt.eventDate} from ${alt.startTime} to ${alt.endTime} - ${alt.reason}`
-          ).join('\n')}
-          
-          The response should:
-          1. Politely explain that the requested slot is not available
-          2. Clearly list the alternative options
-          3. Ask if any of the alternatives would work
-          4. Provide contact information for questions
-          5. Be professional and courteous
-          
-          Format the response as a plain text email.
-        `;
+        // Format alternatives for backend
+        const backendAlternatives = availabilityResult.alternatives.map(alt => ({
+          date: alt.eventDate,
+          start_time: alt.startTime,
+          end_time: alt.endTime
+        }));
+        
+        // Generate rejection with alternatives using backend
+        response = await fetch('http://localhost:8080/api/generate-rejection', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            booking_details: backendBookingDetails,
+            alternative_slots: backendAlternatives
+          }),
+        });
       }
       
-      // Generate content
-      const result = await model.generateContent(prompt);
-      return result.response.text();
+      if (!response.ok) {
+        throw new Error('Failed to generate response');
+      }
+      
+      const data = await response.json();
+      return data.email_body;
     } catch (error) {
       console.error("Error generating response:", error);
       
@@ -590,6 +536,39 @@ michael@financegroup.com`
         <span>{steps[processingStep]}</span>
       </div>
     );
+  };
+  
+  // Add this function to handle invoice generation
+  const handleGenerateInvoice = async () => {
+    if (!extractedDetails) return;
+    
+    setIsGeneratingInvoice(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/generate-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          booking_details: extractedDetails
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate invoice');
+      }
+      
+      const data = await response.json();
+      setGeneratedInvoice(data.invoice);
+      
+      // Update the UI to show success
+      alert('Invoice generated successfully! View it in the Invoice Manager.');
+    } catch (error) {
+      console.error('Error generating invoice:', error);
+      alert('Failed to generate invoice. Please try again.');
+    } finally {
+      setIsGeneratingInvoice(false);
+    }
   };
   
   return (
@@ -752,6 +731,24 @@ michael@financegroup.com`
                   </div>
                 </div>
               </div>
+            )}
+            
+            {/* Add the invoice generation button if booking is confirmed */}
+            {response.type === 'acceptance' && (
+              <button 
+                onClick={handleGenerateInvoice}
+                disabled={isGeneratingInvoice}
+                style={{
+                  ...styles.btn,
+                  ...styles.btnSuccess
+                }}
+              >
+                {isGeneratingInvoice ? (
+                  <><FaSpinner style={{ animation: 'spin 1s linear infinite', marginRight: '8px' }} /> Generating Invoice...</>
+                ) : (
+                  <><FaFileInvoiceDollar style={{ marginRight: '8px' }} /> Generate Invoice</>
+                )}
+              </button>
             )}
           </div>
         )}

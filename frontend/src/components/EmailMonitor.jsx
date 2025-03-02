@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { FaSync, FaEnvelope, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaSync, FaEnvelope, FaCheck, FaTimes, FaRobot } from 'react-icons/fa';
+import './EmailMonitor.css';
 
 const EmailMonitor = () => {
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [emailDetails, setEmailDetails] = useState(null);
+  const [aiAnalysisResults, setAiAnalysisResults] = useState(null);
+  const [aiGeneratedResponse, setAiGeneratedResponse] = useState('');
+  const [processingAction, setProcessingAction] = useState('');
   const [credentials, setCredentials] = useState({
     email: '',
     password: '',
@@ -48,17 +52,17 @@ const EmailMonitor = () => {
             id: 'email2',
             from: 'jane.smith@company.org',
             subject: 'Workshop Booking Inquiry',
-            date: '2023-11-09T10:15:00',
+            date: '2023-11-09T09:15:00',
             processed: false,
-            body: 'Hi there, Our organization would like to host a workshop at your venue on November 20th. We expect around 30 attendees and would need the space from 9:00 AM until 3:00 PM. Please confirm if this date is available. Regards, Jane Smith, Company Organization'
+            body: 'Hi there, I\'m interested in booking your space for a workshop on digital marketing. The event would be on December 5th, 2023, from 9 AM until 5 PM. We expect around 30-35 attendees. We would need projector facilities and a whiteboard. Please let me know the availability and pricing. Best regards, Jane Smith.'
           },
           {
             id: 'email3',
-            from: 'events@techcorp.com',
-            subject: 'Tech Meetup Space Request',
+            from: 'michael.johnson@example.net',
+            subject: 'Private Event Space',
             date: '2023-11-08T16:45:00',
             processed: true,
-            body: 'Hello, We are organizing a tech meetup and would like to use your venue on December 5th from 6:00 PM to 9:00 PM. We anticipate around 50 attendees. Please let us know the availability and pricing. Thanks, Events Team, TechCorp'
+            body: 'To whom it may concern, I\'m looking to book a private room for a retirement celebration on January 20, 2024. We would need the space from 6:00 PM to 10:00 PM and expect approximately 40-50 guests. Do you offer catering services or can we bring our own? Thank you, Michael Johnson'
           }
         ];
         setEmails(mockEmails);
@@ -72,54 +76,136 @@ const EmailMonitor = () => {
   
   const handleEmailSelect = (email) => {
     setSelectedEmail(email);
+    // Reset AI analysis when selecting a new email
+    setAiAnalysisResults(null);
+    setAiGeneratedResponse('');
     
-    // In a real app, this would fetch the parsed booking details
-    // For now, we'll simulate with mock data
+    // In a real app, you would fetch more details about the email
+    // For now, we'll just use what we have
     setEmailDetails({
-      event_date: '2023-11-15',
-      start_time: '2:00 PM',
-      end_time: '4:00 PM',
-      num_attendees: 20,
-      event_type: 'meeting',
-      contact_name: 'John Doe',
-      contact_email: 'john.doe@example.com',
-      organization: 'Example Corp',
-      special_requests: null
+      ...email,
+      fullBody: email.body,
+      attachments: []
     });
   };
   
   const handleCredentialsSubmit = (e) => {
     e.preventDefault();
-    // In a real app, this would validate and store credentials securely
     localStorage.setItem('bookingEmail', credentials.email);
     localStorage.setItem('bookingServer', credentials.server);
     setIsConfigured(true);
     fetchEmails();
   };
   
-  const processEmail = async (accept = true) => {
+  const analyzeEmailWithGemini = async () => {
     if (!selectedEmail) return;
     
+    setProcessingAction('analyzing');
+    setLoading(true);
+    
     try {
-      // In a real app, this would call your backend API
-      // For now, we'll simulate processing
+      // Call the backend API to analyze the email with Gemini
+      const response = await fetch('http://localhost:8080/api/analyze-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email_body: selectedEmail.body }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      setAiAnalysisResults(data.booking_details);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error analyzing email with Gemini:', error);
+      setLoading(false);
+    }
+  };
+  
+  const processEmail = async (accept = true) => {
+    if (!selectedEmail || !aiAnalysisResults) return;
+    
+    try {
+      setProcessingAction(accept ? 'accepting' : 'rejecting');
       setLoading(true);
       
-      setTimeout(() => {
-        // Update the email in the list
-        setEmails(emails.map(email => 
-          email.id === selectedEmail.id 
-            ? {...email, processed: true} 
-            : email
-        ));
-        
-        // Clear selection
-        setSelectedEmail(null);
-        setEmailDetails(null);
-        setLoading(false);
-      }, 1500);
+      // Generate either a confirmation or rejection email using Gemini API
+      const endpoint = accept ? 'generate-confirmation' : 'generate-rejection';
+      
+      // In a real app, you would have actual alternative slots from your calendar system
+      const alternativeSlots = [
+        {
+          date: '2023-11-16',
+          start_time: '10:00 AM',
+          end_time: '12:00 PM',
+        },
+        {
+          date: '2023-11-17',
+          start_time: '3:00 PM',
+          end_time: '5:00 PM',
+        }
+      ];
+      
+      const payload = {
+        booking_details: aiAnalysisResults,
+      };
+      
+      if (!accept) {
+        payload.alternative_slots = alternativeSlots;
+      }
+      
+      const response = await fetch(`http://localhost:8080/api/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      setAiGeneratedResponse(data.email_body);
+      
+      // Update the email in the list to mark as processed
+      setEmails(emails.map(email => 
+        email.id === selectedEmail.id 
+          ? {...email, processed: true} 
+          : email
+      ));
+      
+      setLoading(false);
     } catch (error) {
       console.error('Error processing email:', error);
+      setLoading(false);
+    }
+  };
+  
+  const sendResponse = async () => {
+    if (!selectedEmail || !aiGeneratedResponse) return;
+    
+    setProcessingAction('sending');
+    setLoading(true);
+    
+    try {
+      // In a real app, this would call your backend to send the email
+      // For now, we'll simulate sending
+      setTimeout(() => {
+        setLoading(false);
+        // Clear selection and reset state
+        setSelectedEmail(null);
+        setEmailDetails(null);
+        setAiAnalysisResults(null);
+        setAiGeneratedResponse('');
+      }, 1500);
+    } catch (error) {
+      console.error('Error sending response:', error);
       setLoading(false);
     }
   };
@@ -157,7 +243,6 @@ const EmailMonitor = () => {
                 onChange={(e) => setCredentials({...credentials, password: e.target.value})}
                 required
               />
-              <small>Note: For Gmail, you may need to use an app password.</small>
             </div>
             
             <div className="form-group">
@@ -172,7 +257,7 @@ const EmailMonitor = () => {
               />
             </div>
             
-            <button type="submit" className="btn btn-primary">Connect</button>
+            <button type="submit" className="btn btn-primary">Save and Connect</button>
           </form>
         </div>
       </div>
@@ -183,135 +268,132 @@ const EmailMonitor = () => {
     <div>
       <h1>Email Monitor</h1>
       
-      <div className="email-monitor-container">
-        <div className="email-list card">
-          <div className="card-header">
-            <h2 className="card-title">Booking Emails</h2>
-            <button 
-              className="btn btn-primary" 
-              onClick={fetchEmails} 
-              disabled={loading}
-            >
-              <FaSync className={loading ? 'spin' : ''} /> Refresh
-            </button>
-          </div>
-          
+      <div className="toolbar">
+        <button onClick={fetchEmails} className="btn btn-refresh" disabled={loading}>
+          <FaSync className={loading ? 'spinning' : ''} /> Refresh
+        </button>
+      </div>
+      
+      <div className="email-container">
+        <div className="email-list">
+          <h2>Booking Requests</h2>
           {emails.length === 0 ? (
-            <div className="empty-state">
-              <FaEnvelope size={48} />
-              <p>No booking emails found</p>
-            </div>
+            <p className="no-data">No emails found</p>
           ) : (
-            <ul className="email-list-items">
+            <ul>
               {emails.map(email => (
                 <li 
                   key={email.id} 
-                  className={`email-item ${selectedEmail?.id === email.id ? 'selected' : ''} ${email.processed ? 'processed' : ''}`}
+                  className={`email-item ${email.processed ? 'processed' : ''} ${selectedEmail?.id === email.id ? 'selected' : ''}`}
                   onClick={() => !email.processed && handleEmailSelect(email)}
                 >
-                  <div className="email-item-header">
-                    <span className="email-from">{email.from}</span>
-                    <span className="email-date">{new Date(email.date).toLocaleString()}</span>
+                  <div className="email-icon">
+                    <FaEnvelope />
                   </div>
-                  <div className="email-subject">{email.subject}</div>
-                  {email.processed && <span className="processed-badge">Processed</span>}
+                  <div className="email-info">
+                    <div className="email-from">{email.from}</div>
+                    <div className="email-subject">{email.subject}</div>
+                    <div className="email-date">{new Date(email.date).toLocaleString()}</div>
+                  </div>
+                  {email.processed && (
+                    <div className="email-processed-icon">
+                      <FaCheck />
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
           )}
         </div>
         
-        {selectedEmail && (
-          <div className="email-details card">
-            <div className="card-header">
-              <h2 className="card-title">Email Details</h2>
-              <div className="email-actions">
-                <button 
-                  className="btn btn-success" 
-                  onClick={() => processEmail(true)}
-                  disabled={loading}
-                >
-                  <FaCheck /> Accept
-                </button>
-                <button 
-                  className="btn btn-danger" 
-                  onClick={() => processEmail(false)}
-                  disabled={loading}
-                >
-                  <FaTimes /> Reject
-                </button>
-              </div>
-            </div>
-            
-            <div className="email-content">
-              <h3>Original Email</h3>
-              <div className="email-header-details">
-                <p><strong>From:</strong> {selectedEmail.from}</p>
-                <p><strong>Subject:</strong> {selectedEmail.subject}</p>
-                <p><strong>Date:</strong> {new Date(selectedEmail.date).toLocaleString()}</p>
-              </div>
-              <div className="email-body">
-                {selectedEmail.body}
+        <div className="email-detail">
+          {selectedEmail ? (
+            <>
+              <div className="email-header">
+                <h3>{selectedEmail.subject}</h3>
+                <div className="email-metadata">
+                  <div><strong>From:</strong> {selectedEmail.from}</div>
+                  <div><strong>Date:</strong> {new Date(selectedEmail.date).toLocaleString()}</div>
+                </div>
               </div>
               
-              <h3>Extracted Booking Details</h3>
-              {emailDetails ? (
-                <div className="booking-details">
-                  <div className="detail-row">
-                    <div className="detail-item">
-                      <label>Event Date:</label>
-                      <span>{emailDetails.event_date}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Time:</label>
-                      <span>{emailDetails.start_time} - {emailDetails.end_time}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="detail-row">
-                    <div className="detail-item">
-                      <label>Event Type:</label>
-                      <span>{emailDetails.event_type}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Attendees:</label>
-                      <span>{emailDetails.num_attendees}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="detail-row">
-                    <div className="detail-item">
-                      <label>Contact:</label>
-                      <span>{emailDetails.contact_name}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Email:</label>
-                      <span>{emailDetails.contact_email}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="detail-row">
-                    <div className="detail-item">
-                      <label>Organization:</label>
-                      <span>{emailDetails.organization || 'N/A'}</span>
-                    </div>
-                  </div>
-                  
-                  {emailDetails.special_requests && (
-                    <div className="detail-row">
-                      <div className="detail-item full-width">
-                        <label>Special Requests:</label>
-                        <span>{emailDetails.special_requests}</span>
+              <div className="email-body">
+                {emailDetails?.fullBody}
+              </div>
+              
+              <div className="action-buttons">
+                {!aiAnalysisResults && (
+                  <button 
+                    onClick={analyzeEmailWithGemini} 
+                    className="btn btn-primary"
+                    disabled={loading}
+                  >
+                    <FaRobot /> {loading && processingAction === 'analyzing' ? 'Analyzing...' : 'Analyze with Gemini AI'}
+                  </button>
+                )}
+                
+                {aiAnalysisResults && !aiGeneratedResponse && (
+                  <>
+                    <div className="analysis-results">
+                      <h4>Gemini AI Analysis Results:</h4>
+                      <div className="result-card">
+                        <div><strong>Client:</strong> {aiAnalysisResults.client_name}</div>
+                        <div><strong>Email:</strong> {aiAnalysisResults.client_email}</div>
+                        <div><strong>Date:</strong> {aiAnalysisResults.requested_date}</div>
+                        <div><strong>Time:</strong> {aiAnalysisResults.start_time} - {aiAnalysisResults.end_time}</div>
+                        <div><strong>Purpose:</strong> {aiAnalysisResults.purpose}</div>
+                        <div><strong>Attendees:</strong> {aiAnalysisResults.attendees}</div>
+                        {aiAnalysisResults.special_requests && (
+                          <div><strong>Special Requests:</strong> {aiAnalysisResults.special_requests}</div>
+                        )}
+                      </div>
+                      
+                      <div className="action-row">
+                        <button 
+                          onClick={() => processEmail(true)} 
+                          className="btn btn-success"
+                          disabled={loading}
+                        >
+                          <FaCheck /> {loading && processingAction === 'accepting' ? 'Generating...' : 'Accept & Generate Response'}
+                        </button>
+                        <button 
+                          onClick={() => processEmail(false)} 
+                          className="btn btn-danger"
+                          disabled={loading}
+                        >
+                          <FaTimes /> {loading && processingAction === 'rejecting' ? 'Generating...' : 'Reject & Offer Alternatives'}
+                        </button>
                       </div>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <p>Loading details...</p>
-              )}
+                  </>
+                )}
+                
+                {aiGeneratedResponse && (
+                  <>
+                    <div className="response-preview">
+                      <h4>Generated Response Email:</h4>
+                      <div className="response-content">
+                        <pre>{aiGeneratedResponse}</pre>
+                      </div>
+                      
+                      <button 
+                        onClick={sendResponse} 
+                        className="btn btn-primary"
+                        disabled={loading}
+                      >
+                        <FaEnvelope /> {loading && processingAction === 'sending' ? 'Sending...' : 'Send Response'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="no-selection">
+              <p>Select an email from the list to view details</p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

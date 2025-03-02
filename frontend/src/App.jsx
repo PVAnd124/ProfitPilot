@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
-import { FaChartLine, FaCalendarAlt, FaFileInvoiceDollar, FaBars, FaTimes, FaDatabase } from 'react-icons/fa';
+import { FaChartLine, FaCalendarAlt, FaFileInvoiceDollar, FaBars, FaTimes, FaDatabase, FaEnvelope, FaBookmark } from 'react-icons/fa';
 import './App.css';
 
 // Components
@@ -10,6 +10,10 @@ import EventScheduler from './components/EventScheduler';
 import FinancialRecords from './components/FinancialRecords';
 import DataQuery from './components/DataQuery';
 import ActivityLog from './components/ActivityLog';
+import BookingSimulator from './components/BookingSimulator';
+import InvoiceManager from './components/InvoiceManager';
+import EmailMonitor from './components/EmailMonitor';
+import Dashboard from './components/Dashboard';
 
 function App() {
   const [navbarOpen, setNavbarOpen] = useState(true);
@@ -55,6 +59,11 @@ function App() {
           </div>
           <ul className="nav-links">
             <li>
+              <Link to="/dashboard" onClick={() => setNavbarOpen(false)}>
+                <FaChartLine /> Dashboard
+              </Link>
+            </li>
+            <li>
               <Link to="/weekly-digest" onClick={() => setNavbarOpen(false)}>
                 <FaChartLine /> Weekly Financial Digest
               </Link>
@@ -70,6 +79,21 @@ function App() {
               </Link>
             </li>
             <li>
+              <Link to="/email-monitor" onClick={() => setNavbarOpen(false)}>
+                <FaEnvelope /> Email Monitor
+              </Link>
+            </li>
+            <li>
+              <Link to="/booking-simulator" onClick={() => setNavbarOpen(false)}>
+                <FaBookmark /> Booking Simulator
+              </Link>
+            </li>
+            <li>
+              <Link to="/invoice-manager" onClick={() => setNavbarOpen(false)}>
+                <FaFileInvoiceDollar /> Invoice Manager
+              </Link>
+            </li>
+            <li>
               <Link to="/data-query" onClick={() => setNavbarOpen(false)}>
                 <FaDatabase /> Data Query
               </Link>
@@ -80,10 +104,14 @@ function App() {
         {/* Main Content Area */}
         <main className={`main-content ${navbarOpen ? 'with-sidebar' : 'full-width'}`}>
           <Routes>
-            <Route path="/" element={<Navigate to="/weekly-digest" replace />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/weekly-digest" element={<WeeklyFinancialDigest />} />
             <Route path="/event-scheduler" element={<EventScheduler />} />
             <Route path="/financial-records" element={<FinancialRecords />} />
+            <Route path="/email-monitor" element={<EmailMonitor />} />
+            <Route path="/booking-simulator" element={<BookingSimulator />} />
+            <Route path="/invoice-manager" element={<InvoiceManager />} />
             <Route path="/data-query" element={<DataQuery />} />
           </Routes>
         </main>

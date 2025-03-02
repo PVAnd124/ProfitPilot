@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaDownload, FaEye, FaTrash, FaSearch } from 'react-icons/fa';
+import { FaDownload, FaEye, FaTrash, FaSearch, FaSpinner } from 'react-icons/fa';
 
 const InvoiceManager = () => {
   const [invoices, setInvoices] = useState([]);
@@ -15,9 +15,36 @@ const InvoiceManager = () => {
   const fetchInvoices = async () => {
     setLoading(true);
     try {
-      // In a real app, this would be an API call to your backend
-      // For now, we'll simulate with mock data
-      setTimeout(() => {
+      // Fetch invoices from the backend API
+      const response = await fetch('http://localhost:8080/api/invoices');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch invoices');
+      }
+      
+      const data = await response.json();
+      
+      // Transform the invoice data to match our component's expected format
+      const formattedInvoices = data.invoices.map(invoice => {
+        const invoiceData = invoice.invoice_data || {};
+        
+        return {
+          id: invoiceData.invoice_number || 'Unknown',
+          clientName: invoiceData.client?.name || 'Unknown',
+          organization: invoiceData.client?.organization || 'N/A',
+          eventType: invoiceData.booking?.purpose || 'Event',
+          eventDate: invoiceData.booking?.date || 'N/A',
+          amount: invoiceData.total || 0,
+          status: 'pending',
+          createdAt: invoiceData.invoice_date || new Date().toISOString().split('T')[0],
+          paidAt: null,
+          html_content: invoice.html_content || '',
+          raw_data: invoice
+        };
+      });
+      
+      // If we don't have any real invoices yet, add some mock data
+      if (formattedInvoices.length === 0) {
         const mockInvoices = [
           {
             id: 'INV1001',
@@ -28,7 +55,8 @@ const InvoiceManager = () => {
             amount: 1750,
             status: 'paid',
             createdAt: '2023-10-20',
-            paidAt: '2023-10-25'
+            paidAt: '2023-10-25',
+            html_content: '<div class="invoice"><h2>Invoice #INV1001</h2><p>This is a mock invoice</p></div>'
           },
           {
             id: 'INV1002',
@@ -39,37 +67,49 @@ const InvoiceManager = () => {
             amount: 1125,
             status: 'pending',
             createdAt: '2023-10-22',
-            paidAt: null
-          },
-          {
-            id: 'INV1003',
-            clientName: 'Michael Brown',
-            organization: 'Finance Group',
-            eventType: 'Meeting',
-            eventDate: '2023-11-20',
-            amount: 875,
-            status: 'pending',
-            createdAt: '2023-10-25',
-            paidAt: null
-          },
-          {
-            id: 'INV1004',
-            clientName: 'Emily Davis',
-            organization: 'Marketing Team',
-            eventType: 'Seminar',
-            eventDate: '2023-12-05',
-            amount: 1250,
-            status: 'paid',
-            createdAt: '2023-10-15',
-            paidAt: '2023-10-18'
+            paidAt: null,
+            html_content: '<div class="invoice"><h2>Invoice #INV1002</h2><p>This is a mock invoice</p></div>'
           }
         ];
         
         setInvoices(mockInvoices);
-        setLoading(false);
-      }, 1000);
+      } else {
+        setInvoices(formattedInvoices);
+      }
+      
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching invoices:', error);
+      
+      // Fallback to mock data if the API fails
+      const mockInvoices = [
+        {
+          id: 'INV1001',
+          clientName: 'John Smith',
+          organization: 'Tech Solutions Inc.',
+          eventType: 'Conference',
+          eventDate: '2023-11-15',
+          amount: 1750,
+          status: 'paid',
+          createdAt: '2023-10-20',
+          paidAt: '2023-10-25',
+          html_content: '<div class="invoice"><h2>Invoice #INV1001</h2><p>This is a mock invoice</p></div>'
+        },
+        {
+          id: 'INV1002',
+          clientName: 'Sarah Johnson',
+          organization: 'Design Studio',
+          eventType: 'Workshop',
+          eventDate: '2023-11-18',
+          amount: 1125,
+          status: 'pending',
+          createdAt: '2023-10-22',
+          paidAt: null,
+          html_content: '<div class="invoice"><h2>Invoice #INV1002</h2><p>This is a mock invoice</p></div>'
+        }
+      ];
+      
+      setInvoices(mockInvoices);
       setLoading(false);
     }
   };
@@ -86,14 +126,37 @@ const InvoiceManager = () => {
   
   const handleDownloadInvoice = (invoiceId) => {
     // In a real app, this would download the invoice file
-    alert(`Downloading invoice ${invoiceId}`);
+    const invoice = invoices.find(inv => inv.id === invoiceId);
+    
+    if (invoice && invoice.html_content) {
+      // Create a Blob from the HTML content
+      const blob = new Blob([invoice.html_content], { type: 'text/html' });
+      
+      // Create a URL for the Blob
+      const url = URL.createObjectURL(blob);
+      
+      // Create a temporary link to download the file
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Invoice-${invoiceId}.html`;
+      
+      // Trigger a click event on the link
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      alert(`Downloading invoice ${invoiceId}`);
+    }
   };
   
   const handleDeleteInvoice = async (invoiceId) => {
     if (!confirm('Are you sure you want to delete this invoice?')) return;
     
     try {
-      // In a real app, this would be an API call to your backend
+      // In a production app, this would call an API to delete the invoice
       setInvoices(invoices.filter(invoice => invoice.id !== invoiceId));
     } catch (error) {
       console.error('Error deleting invoice:', error);
