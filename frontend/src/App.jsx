@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
-import { FaChartLine, FaCalendarAlt, FaFileInvoiceDollar, FaBars, FaTimes } from 'react-icons/fa';
+import { FaChartLine, FaCalendarAlt, FaFileInvoiceDollar, FaBars, FaTimes, FaDatabase } from 'react-icons/fa';
 import './App.css';
 
 // Components
@@ -8,6 +8,7 @@ import InteractiveBackground from './components/InteractiveBackground';
 import WeeklyFinancialDigest from './components/WeeklyFinancialDigest';
 import EventScheduler from './components/EventScheduler';
 import FinancialRecords from './components/FinancialRecords';
+import DataQuery from './components/DataQuery';
 
 function App() {
   const [navbarOpen, setNavbarOpen] = useState(true);
@@ -48,6 +49,11 @@ function App() {
                 <FaFileInvoiceDollar /> Complete Financial Records
               </Link>
             </li>
+            <li>
+              <Link to="/data-query" onClick={() => setNavbarOpen(false)}>
+                <FaDatabase /> Data Query
+              </Link>
+            </li>
           </ul>
         </nav>
 
@@ -58,6 +64,7 @@ function App() {
             <Route path="/weekly-digest" element={<WeeklyFinancialDigest />} />
             <Route path="/event-scheduler" element={<EventScheduler />} />
             <Route path="/financial-records" element={<FinancialRecords />} />
+            <Route path="/data-query" element={<DataQuery />} />
           </Routes>
         </main>
       </div>
