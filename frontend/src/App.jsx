@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { FaChartLine, FaCalendarAlt, FaFileInvoiceDollar, FaBars, FaTimes, FaDatabase } from 'react-icons/fa';
 import './App.css';
@@ -9,13 +9,33 @@ import WeeklyFinancialDigest from './components/WeeklyFinancialDigest';
 import EventScheduler from './components/EventScheduler';
 import FinancialRecords from './components/FinancialRecords';
 import DataQuery from './components/DataQuery';
+import ActivityLog from './components/ActivityLog';
 
 function App() {
   const [navbarOpen, setNavbarOpen] = useState(true);
+  const [activityLogExpanded, setActivityLogExpanded] = useState(false);
 
   const toggleNavbar = () => {
     setNavbarOpen(!navbarOpen);
   };
+
+  // Listen for custom events from the ActivityLog component
+  useEffect(() => {
+    const handleActivityLogExpand = (e) => {
+      setActivityLogExpanded(e.detail.expanded);
+    };
+
+    document.addEventListener('activity-log-state-change', handleActivityLogExpand);
+    
+    return () => {
+      document.removeEventListener('activity-log-state-change', handleActivityLogExpand);
+    };
+  }, []);
+
+  // Update document body data attribute when activity log state changes
+  useEffect(() => {
+    document.body.setAttribute('data-activity-log-expanded', activityLogExpanded);
+  }, [activityLogExpanded]);
 
   return (
     <Router>
@@ -67,6 +87,15 @@ function App() {
             <Route path="/data-query" element={<DataQuery />} />
           </Routes>
         </main>
+        
+        {/* Activity Log Sidebar */}
+        <ActivityLog 
+          onStateChange={(expanded) => {
+            document.dispatchEvent(new CustomEvent('activity-log-state-change', { 
+              detail: { expanded } 
+            }));
+          }}
+        />
       </div>
     </Router>
   );

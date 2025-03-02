@@ -1,23 +1,87 @@
 .activity-log {
   position: fixed;
-  top: 2.5vh;
-  right: 2.5vw;
-  width: 25%;
-  height: 95vh;
+  top: 20px;
+  right: 20px;
+  width: 320px;
+  height: calc(100vh - 40px);
   background-color: rgba(30, 39, 46, 0.9);
-  border-radius: 15px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
   z-index: 100;
-  transition: transform 0.3s, box-shadow 0.3s;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
   overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  border-radius: 15px;
+  opacity: 1;
 }
 
-.activity-log:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+.activity-log.collapsed {
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.activity-log.expanded {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* Add a hover trigger area on the right edge of the screen */
+.activity-log-hover-trigger {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 100vh;
+  z-index: 98;
+  background-color: transparent;
+}
+
+.activity-log-toggle {
+  position: absolute;
+  top: 50%;
+  left: -15px;
+  width: 30px;
+  height: 30px;
+  background-color: var(--primary-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  transition: background-color 0.2s;
+  z-index: 10;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.activity-log-toggle:hover {
+  background-color: #5f4dd0;
+}
+
+.activity-log-toggle-collapsed {
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  width: 30px;
+  height: 30px;
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  transition: transform 0.2s;
+  z-index: 99;
+}
+
+.activity-log-toggle-collapsed:hover {
+  transform: translateY(-50%) scale(1.2);
+  color: white;
 }
 
 .activity-log-header {
@@ -27,6 +91,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-radius: 15px 15px 0 0;
 }
 
 .activity-log-title {
@@ -154,12 +219,15 @@
 
 @media (max-width: 768px) {
   .activity-log {
-    width: 100%;
-    height: 40vh;
-    top: auto;
-    bottom: 0;
-    right: 0;
-    border-radius: 15px 15px 0 0;
+    width: 80%;
+  }
+  
+  .activity-log.collapsed {
+    transform: translateX(100%);
+  }
+  
+  .activity-log-toggle {
+    left: -30px;
   }
 }
 

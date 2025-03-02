@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { FaRobot, FaEnvelope, FaCalendarCheck, FaFileInvoiceDollar, FaSearch } from 'react-icons/fa';
+import React, { useState, useEffect, useRef } from 'react';
+import { FaRobot, FaEnvelope, FaCalendarCheck, FaFileInvoiceDollar, FaSearch, FaChevronLeft } from 'react-icons/fa';
 import './ActivityLog.css';
 
-const ActivityLog = () => {
+const ActivityLog = ({ onStateChange }) => {
   const [logs, setLogs] = useState([]);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const sidebarRef = useRef(null);
+  const hoverTriggerRef = useRef(null);
 
   useEffect(() => {
     // In a real app, this would fetch from an API or use websockets
@@ -91,8 +94,46 @@ const ActivityLog = () => {
       }, ...prevLogs.slice(0, 20)]);  // Keep only the most recent 20 logs
     }, 45000);  // Add a new log every 45 seconds
     
-    return () => clearInterval(interval);
-  }, []);
+    // Set up hover trigger for right edge of screen
+    const handleHoverTriggerEnter = () => {
+      setIsExpanded(true);
+      if (onStateChange) onStateChange(true);
+    };
+    
+    // Set up hover out for the main card
+    const handleSidebarLeave = () => {
+      setIsExpanded(false);
+      if (onStateChange) onStateChange(false);
+    };
+    
+    const hoverTrigger = hoverTriggerRef.current;
+    const sidebar = sidebarRef.current;
+    
+    if (hoverTrigger) {
+      hoverTrigger.addEventListener('mouseenter', handleHoverTriggerEnter);
+    }
+    
+    if (sidebar) {
+      sidebar.addEventListener('mouseleave', handleSidebarLeave);
+    }
+    
+    return () => {
+      clearInterval(interval);
+      if (hoverTrigger) {
+        hoverTrigger.removeEventListener('mouseenter', handleHoverTriggerEnter);
+      }
+      if (sidebar) {
+        sidebar.removeEventListener('mouseleave', handleSidebarLeave);
+      }
+    };
+  }, [onStateChange]);
+
+  // Toggle expanded state for manual clicking
+  const toggleExpanded = () => {
+    const newExpandedState = !isExpanded;
+    setIsExpanded(newExpandedState);
+    if (onStateChange) onStateChange(newExpandedState);
+  };
 
   const formatTimestamp = (isoString) => {
     const date = new Date(isoString);
@@ -112,36 +153,58 @@ const ActivityLog = () => {
   };
 
   return (
-    <div className="activity-log">
-      <div className="activity-log-header">
-        <div className="activity-log-title">
-          <FaRobot className="activity-log-icon" />
-          <h2>AI Activity Log</h2>
-        </div>
-        <div className="activity-status online">Active</div>
-      </div>
+    <>
+      {/* Hover trigger area on the right edge of the screen */}
+      <div 
+        ref={hoverTriggerRef}
+        className="activity-log-hover-trigger"
+      />
       
-      <div className="activity-log-body">
-        {logs.map((log, index) => (
-          <div 
-            key={log.id} 
-            className="activity-item"
-            style={{ 
-              opacity: Math.max(0.4, 1 - (index * 0.1)),
-              animationDelay: `${index * 0.05}s`
-            }}
-          >
-            <div className="activity-icon">
-              {log.icon}
-            </div>
-            <div className="activity-content">
-              <div className="activity-description">{log.description}</div>
-              <div className="activity-timestamp">{formatTimestamp(log.timestamp)}</div>
-            </div>
+      {/* Standalone toggle button when collapsed */}
+      {!isExpanded && (
+        <div 
+          className="activity-log-toggle-collapsed"
+          onClick={toggleExpanded}
+        >
+          <FaChevronLeft />
+        </div>
+      )}
+      
+      {/* Main activity log panel */}
+      <div 
+        ref={sidebarRef}
+        className={`activity-log ${isExpanded ? 'expanded' : 'collapsed'}`}
+      >
+        <div className="activity-log-header">
+          <div className="activity-log-title">
+            <FaRobot className="activity-log-icon" />
+            <h2>AI Activity Log</h2>
           </div>
-        ))}
+          <div className="activity-status online">Active</div>
+        </div>
+        
+        <div className="activity-log-body">
+          {logs.map((log, index) => (
+            <div 
+              key={log.id} 
+              className="activity-item"
+              style={{ 
+                opacity: Math.max(0.4, 1 - (index * 0.1)),
+                animationDelay: `${index * 0.05}s`
+              }}
+            >
+              <div className="activity-icon">
+                {log.icon}
+              </div>
+              <div className="activity-content">
+                <div className="activity-description">{log.description}</div>
+                <div className="activity-timestamp">{formatTimestamp(log.timestamp)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

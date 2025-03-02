@@ -174,7 +174,7 @@ body {
 .main-content {
   flex: 1;
   padding: 30px;
-  transition: margin-left var(--transition-speed);
+  transition: margin-right 0.3s ease-in-out;
   width: 100%;
 }
 
@@ -184,6 +184,31 @@ body {
 
 .main-content.full-width {
   margin-left: 0;
+}
+
+/* Add data attribute to body when activity log is expanded */
+body[data-activity-log-expanded="true"] .main-content {
+  margin-right: 340px; /* 320px width + 20px margin */
+}
+
+/* Responsive adjustment for the main content */
+@media (max-width: 1200px) {
+  body[data-activity-log-expanded="true"] .main-content {
+    margin-right: 30%;
+  }
+}
+
+@media (max-width: 992px) {
+  body[data-activity-log-expanded="true"] .main-content {
+    margin-right: 35%;
+  }
+}
+
+@media (max-width: 768px) {
+  body[data-activity-log-expanded="true"] .main-content {
+    margin-right: 0;
+    opacity: 0.5;  /* Dim the main content on mobile when sidebar is open */
+  }
 }
 
 /* Page Container */
@@ -270,6 +295,11 @@ body {
   .nav-toggle {
     left: auto;
     right: 20px;
+  }
+  
+  .main-content {
+    margin-right: 0;
+    margin-bottom: 42vh; /* Make room for activity log on mobile */
   }
 }
 
