@@ -1,4 +1,8 @@
 flask
 flask-cors
 dotenv
-
+prophet
+numpy
+pandas
+sqlalchemy
+plotly
