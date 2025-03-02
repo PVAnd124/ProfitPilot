@@ -1,8 +1,10 @@
 .financial-records-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
 .financial-controls {
@@ -113,10 +115,12 @@
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
 }
 
 .financial-metric-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-5px) !important;
 }
 
 .metric-header {
@@ -371,8 +375,8 @@
 }
 
 .pie-chart-placeholder {
-  width: 200px;
-  height: 200px;
+  width: 250px;
+  height: 250px;
   border-radius: 50%;
   background-image: conic-gradient(
     var(--primary-color) 0% 45%,
@@ -386,13 +390,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: none;
 }
 
 .pie-chart-placeholder::after {
   content: '';
   position: absolute;
-  width: 120px;
-  height: 120px;
+  width: 150px;
+  height: 150px;
   background-color: rgba(30, 39, 46, 0.9);
   border-radius: 50%;
 }
@@ -481,12 +486,20 @@
   .financial-records-header {
     flex-direction: column;
     align-items: flex-start;
+    width: 100%;
   }
   
   .financial-controls {
     margin-top: 15px;
     width: 100%;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .location-selector,
+  .date-selector {
+    flex: 1;
+    min-width: 180px;
   }
   
   .pie-chart-legend {
@@ -522,4 +535,299 @@
     flex-direction: column;
     gap: 15px;
   }
+}
+
+/* Add these CSS variables if they don't already exist in your app */
+:root {
+  --primary-color: #6c5ce7;
+  --secondary-color: #00cec9;
+  --accent-color: #fd79a8;
+  --text-color: #f5f6fa;
+  --background-color: #1e272e;
+}
+
+.financial-records-page {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Chart animations */
+@keyframes growUp {
+  from { height: 0%; }
+  to { height: var(--chart-height); }
+}
+
+.chart-bar-container {
+  animation: growUp 1.5s ease-out forwards;
+}
+
+/* Additional styles for better visualization */
+.pie-chart-placeholder {
+  animation: none;
+}
+
+/* Table styles */
+.table-container {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--text-color);
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.data-table th {
+  font-weight: 600;
+  background-color: rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.data-table tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Animation for cards when they appear */
+.financial-metric-card {
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.summary-card {
+  animation: fadeInUp 0.5s ease forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.summary-card:nth-child(1) { animation-delay: 0.1s; }
+.summary-card:nth-child(2) { animation-delay: 0.2s; }
+.summary-card:nth-child(3) { animation-delay: 0.3s; }
+.summary-card:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Additional hover effects for interactive elements */
+.report-card:hover {
+  transform: translateY(-5px);
+}
+
+.action-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.action-button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%, -50%);
+  transform-origin: 50% 50%;
+}
+
+.action-button:hover::after {
+  animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(20, 20);
+    opacity: 0;
+  }
+}
+
+/* Custom scrollbar for tables */
+.table-container::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+/* Additional styles for mobile optimization */
+@media (max-width: 576px) {
+  .financial-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .location-selector,
+  .date-selector,
+  .control-button {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  
+  .tab-button {
+    font-size: 0.8rem;
+    padding: 8px 10px;
+  }
+  
+  .tab-button svg {
+    margin-right: 5px;
+  }
+  
+  .reports-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Print styles - for reports and invoices */
+@media print {
+  .financial-tabs, .financial-controls, .action-bar, .control-button {
+    display: none !important;
+  }
+  
+  .financial-metric-card, .summary-card, .card {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  
+  .page-container {
+    padding: 0;
+    max-width: 100%;
+  }
+  
+  body {
+    background: white;
+    color: black;
+  }
+  
+  .data-table th, .data-table td {
+    color: black;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .amount.positive {
+    color: #28a745;
+  }
+  
+  .amount.negative {
+    color: #dc3545;
+  }
+}
+
+/* Fix for bar chart visualization */
+.monthly-chart-simulation {
+  align-items: flex-end;
+  height: 100%;
+}
+
+.chart-bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(to top, rgba(108, 92, 231, 0.7), rgba(108, 92, 231, 0.3));
+  transition: height 1s ease-in-out;
+}
+
+/* Enhance card animations */
+.card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Add styles for the header title section */
+.header-title-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.current-location {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--accent-color);
+  margin-top: 5px;
+}
+
+.current-location svg {
+  color: var(--primary-color);
+}
+
+/* Style the location selector similar to date selector */
+.location-selector {
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 220px; /* Wider to accommodate longer location names */
+}
+
+.location-selector svg {
+  margin-right: 8px;
+  color: var(--primary-color);
+}
+
+.location-selector select {
+  background: transparent;
+  border: none;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  outline: none;
+  width: 100%;
+}
+
+.location-selector select option {
+  background-color: var(--background-color);
+}
+
+/* Optional: Add a location indicator element that could be used in dashboard */
+.location-indicator {
+  display: flex;
+  align-items: center;
+  background-color: rgba(108, 92, 231, 0.1);
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 3px solid var(--primary-color);
+}
+
+.location-indicator svg {
+  margin-right: 10px;
+  color: var(--primary-color);
 } 
