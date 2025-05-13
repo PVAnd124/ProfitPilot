@@ -11,4 +11,5 @@ sqlalchemy
 plotly
 matplotlib
 openai
+waitress==2.1.2
 

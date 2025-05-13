@@ -26,7 +26,7 @@ import numpy as np
 
 app = Flask(__name__)
 # Simplify CORS setting to allow all requests from your frontend
-CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # Initialize data
 generate_sample_data()
